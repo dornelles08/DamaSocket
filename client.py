@@ -52,13 +52,27 @@ if msg == "Esperando Adversario":
     con, adversario = tcp.accept()    
 
     msg = con.recv(1024)
-    print("Recebida: {}".format(msg.decode('utf-8')))
     pygame.quit()
 
     menuGame()
     a = Dama(1)
-    a.main(con)
+    winner = a.main(con)
     con.close()
+
+    laco = True
+    while laco:
+        win = pygame.display.set_mode((500,500))
+        pygame.display.set_caption("Dama")
+        if winner == 1:
+            win.blit(pygame.image.load(os.path.join("imagens", "vitoria.png")),(0,0))
+        else:
+            win.blit(pygame.image.load(os.path.join("imagens", "derrota.png")),(0,0))
+        
+        for event in pygame.event.get():        
+            if event.type == MOUSEBUTTONDOWN:
+                pygame.quit()
+        pygame.display.update()
+        
 
 else:
 
@@ -68,6 +82,21 @@ else:
 
     menuGame()
     a = Dama(0)
-    a.main(tcp)
+    winner = a.main(tcp)
     tcp.close()
+
+    laco = True
+    while laco:
+        win = pygame.display.set_mode((500,500))
+        pygame.display.set_caption("Dama")
+        if winner == 0:
+            win.blit(pygame.image.load(os.path.join("imagens", "vitoria.png")),(0,0))
+        else:
+            win.blit(pygame.image.load(os.path.join("imagens", "derrota.png")),(0,0))
+        
+        for event in pygame.event.get():        
+            if event.type == MOUSEBUTTONDOWN:
+                pygame.quit()
+        
+        pygame.display.update()
 

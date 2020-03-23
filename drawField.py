@@ -45,20 +45,22 @@ class Enviar:
 
 class Listener(Thread):
     def __init__(self, con):
-        Thread.__init__(self)        
+        Thread.__init__(self)
         self.con = con
 
     def run(self):
-        while True:
-            msg = self.con.recv(1024)
-            receber = pickle.loads(msg)
-            pretas, brancas, vez = receber.AtualizarObjeto()
-            q.put(pretas)
-            q.put(brancas)
-            q.put(vez)        
+        laco = True
+        while laco:
+            try:
+                msg = self.con.recv(1024)
+                receber = pickle.loads(msg)
+                pretas, brancas, vez = receber.AtualizarObjeto()
+                q.put(pretas)
+                q.put(brancas)
+                q.put(vez)
+            except:
+                laco = False
         
-        
-
 class Dama:
     def __init__(self, color):
         self.window = pygame.display.set_mode((500,500))
@@ -82,7 +84,7 @@ class Dama:
             [[(50,350,50,50), (150,150,150)], [(100,350,50,50), (255,255,255)], [(150,350,50,50), (150,150,150)], [(200,350,50,50), (255,255,255)], [(250,350,50,50), (150,150,150)], [(300,350,50,50), (255,255,255)], [(350,350,50,50), (150,150,150)], [(400,350,50,50), (255,255,255)]],
             [[(50,400,50,50), (255,255,255)], [(100,400,50,50), (150,150,150)], [(150,400,50,50), (255,255,255)], [(200,400,50,50), (150,150,150)], [(250,400,50,50), (255,255,255)], [(300,400,50,50), (150,150,150)], [(350,400,50,50), (255,255,255)], [(400,400,50,50), (150,150,150)]],
         ]
-        self.pretas  = [
+        '''self.pretas  = [
             [self.campo[0][0][0], self.PRETA, False],  [self.campo[0][2][0], self.PRETA, False], [self.campo[0][4][0], self.PRETA, False], [self.campo[0][6][0], self.PRETA, False],
             [self.campo[1][1][0], self.PRETA, False],  [self.campo[1][3][0], self.PRETA, False], [self.campo[1][5][0], self.PRETA, False], [self.campo[1][7][0], self.PRETA, False],
             [self.campo[2][0][0], self.PRETA, False],  [self.campo[2][2][0], self.PRETA, False], [self.campo[2][4][0], self.PRETA, False], [self.campo[2][6][0], self.PRETA, False]
@@ -91,6 +93,12 @@ class Dama:
             [self.campo[7][1][0], self.BRANCA, False], [self.campo[7][3][0], self.BRANCA, False], [self.campo[7][5][0], self.BRANCA, False], [self.campo[7][7][0], self.BRANCA, False],
             [self.campo[6][0][0], self.BRANCA, False], [self.campo[6][2][0], self.BRANCA, False], [self.campo[6][4][0], self.BRANCA, False], [self.campo[6][6][0], self.BRANCA, False],
             [self.campo[5][1][0], self.BRANCA, False], [self.campo[5][3][0], self.BRANCA, False], [self.campo[5][5][0], self.BRANCA, False], [self.campo[5][7][0], self.BRANCA, False]
+        ]'''
+        self.pretas  = [
+            [self.campo[0][0][0], self.PRETA, False]
+        ]
+        self.brancas = [
+            [self.campo[1][1][0], self.BRANCA, False]
         ]
 
         self.peiceSelected = None
@@ -106,7 +114,17 @@ class Dama:
    
     def UpdateParameter(self):
         self.pretas = q.get()
-        self.brancas = q.get()
+        self.brancas = q.get()        
+        if self.vez == 0:
+            if self.peiceColor == 1:
+                self.vezText = self.YOURTURN
+            elif self.peiceColor == 0:
+                self.vezText = self.WAIT
+        else:
+            if self.peiceColor == 1:
+                self.vezText = self.WAIT
+            elif self.peiceColor == 0:
+                self.vezText = self.YOURTURN
         self.vez = q.get()
 
     def Field(self):
@@ -260,7 +278,6 @@ class Dama:
                 for i in range(len(self.brancas)):
                     if self.brancas[i][0] == removePosition:
                         self.brancas.pop(i)
-                        print("Comeu")
                         break
             if posSelected[1] == 400:
                 self.pretas[peiceSelected][1] = self.DAMAPRETA
@@ -272,7 +289,6 @@ class Dama:
                 for i in range(len(self.pretas)):
                     if self.pretas[i][0] == removePosition:
                         self.pretas.pop(i)
-                        print("Comeu")
                         break
             if posSelected[1] == 50:
                 self.brancas[peiceSelected][1] = self.DAMABRANCA
@@ -324,7 +340,7 @@ class Dama:
                     return None
 
     def MovePosibilityDama(self, peiceSelected, peices, cor, adversario):
-        _, i, j = self.SelectPos((peices[peiceSelected][0][0], peices[peiceSelected][0][1]), self.campo)
+        _, i, j = self.SelectPos((peices[peiceSelected][0][0], peices[peiceSelected][0][1]))
         posPeice = peices[peiceSelected][0]
         self.posibilityMove = []
         collisonPosition = None
@@ -334,7 +350,7 @@ class Dama:
             print(i)
             #preto
             if j == 0:
-                for p in peices:                    
+                for p in peices:
                     if p[0] != self.campo[i+1][j+1][0]:
                         self.posibilityMove.append(self.campo[i+1][j+1][0])
                     
@@ -453,39 +469,18 @@ class Dama:
 
         return self.posibilityMove, collisonPosition, removePosition
 
-    def MoveDama(self, peiceSelected, peices, posSelected, collisonPosition, removePosition):
-        if peices == 0:
-            self.pretas[peiceSelected][0] = posSelected
-            if posSelected == collisonPosition:                
-                for i in range(len(self.brancas)):
-                    if self.brancas[i][0] == removePosition:
-                        self.brancas.pop(i)
-                        print("Dama comeu")
-                        break
-                
-        elif peices == 1:
-            self.brancas[peiceSelected][0] = posSelected
-            if posSelected == collisonPosition:
-                for i in range(len(self.pretas)):
-                    if self.pretas[i][0] == removePosition:
-                        self.pretas.pop(i)
-                        print("Dama comeu")
-                        break
-
     def Winner(self):
         if self.pretas == []:
-            print("Vitória do Branco")
-            return False
-        elif self.brancas == []:
-            print("Vitória do Preto")
-            return False
-        return True
+            return False, 1
+        elif self.brancas == []:                                                       
+            return False, 0
+        return True, None
     
     def main(self, con):
         pygame.init()   
         l = Listener(con)
         l.start()    
-
+        winner = None
         while self.loop:
             self.window.fill((192,217,217))
             self.Field()
@@ -517,6 +512,7 @@ class Dama:
                                     self.vezText = self.WAIT
                                 elif self.peiceColor == 0:
                                     self.vezText = self.YOURTURN
+
                             self.campo = [
                                             [[(50,50,50,50),  (150,150,150)], [(100,50,50,50),  (255,255,255)], [(150,50,50,50),  (150,150,150)], [(200,50,50,50),  (255,255,255)], [(250,50,50,50),  (150,150,150)], [(300,50,50,50),  (255,255,255)], [(350,50,50,50),  (150,150,150)], [(400,50,50,50),  (255,255,255)]],
                                             [[(50,100,50,50), (255,255,255)], [(100,100,50,50), (150,150,150)], [(150,100,50,50), (255,255,255)], [(200,100,50,50), (150,150,150)], [(250,100,50,50), (255,255,255)], [(300,100,50,50), (150,150,150)], [(350,100,50,50), (255,255,255)], [(400,100,50,50), (150,150,150)]],
@@ -526,12 +522,22 @@ class Dama:
                                             [[(50,300,50,50), (255,255,255)], [(100,300,50,50), (150,150,150)], [(150,300,50,50), (255,255,255)], [(200,300,50,50), (150,150,150)], [(250,300,50,50), (255,255,255)], [(300,300,50,50), (150,150,150)], [(350,300,50,50), (255,255,255)], [(400,300,50,50), (150,150,150)]],
                                             [[(50,350,50,50), (150,150,150)], [(100,350,50,50), (255,255,255)], [(150,350,50,50), (150,150,150)], [(200,350,50,50), (255,255,255)], [(250,350,50,50), (150,150,150)], [(300,350,50,50), (255,255,255)], [(350,350,50,50), (150,150,150)], [(400,350,50,50), (255,255,255)]],
                                             [[(50,400,50,50), (255,255,255)], [(100,400,50,50), (150,150,150)], [(150,400,50,50), (255,255,255)], [(200,400,50,50), (150,150,150)], [(250,400,50,50), (255,255,255)], [(300,400,50,50), (150,150,150)], [(350,400,50,50), (255,255,255)], [(400,400,50,50), (150,150,150)]],
-                                        ]
+                            ]
                             enviar = Enviar(self.pretas, self.brancas, self.vez)
                             con.send(bytes(pickle.dumps(enviar)))                        
                         else:
                             self.peiceSelected = None
                             self.posSelected = None
+                            self.campo = [
+                                            [[(50,50,50,50),  (150,150,150)], [(100,50,50,50),  (255,255,255)], [(150,50,50,50),  (150,150,150)], [(200,50,50,50),  (255,255,255)], [(250,50,50,50),  (150,150,150)], [(300,50,50,50),  (255,255,255)], [(350,50,50,50),  (150,150,150)], [(400,50,50,50),  (255,255,255)]],
+                                            [[(50,100,50,50), (255,255,255)], [(100,100,50,50), (150,150,150)], [(150,100,50,50), (255,255,255)], [(200,100,50,50), (150,150,150)], [(250,100,50,50), (255,255,255)], [(300,100,50,50), (150,150,150)], [(350,100,50,50), (255,255,255)], [(400,100,50,50), (150,150,150)]],
+                                            [[(50,150,50,50), (150,150,150)], [(100,150,50,50), (255,255,255)], [(150,150,50,50), (150,150,150)], [(200,150,50,50), (255,255,255)], [(250,150,50,50), (150,150,150)], [(300,150,50,50), (255,255,255)], [(350,150,50,50), (150,150,150)], [(400,150,50,50), (255,255,255)]],
+                                            [[(50,200,50,50), (255,255,255)], [(100,200,50,50), (150,150,150)], [(150,200,50,50), (255,255,255)], [(200,200,50,50), (150,150,150)], [(250,200,50,50), (255,255,255)], [(300,200,50,50), (150,150,150)], [(350,200,50,50), (255,255,255)], [(400,200,50,50), (150,150,150)]],
+                                            [[(50,250,50,50), (150,150,150)], [(100,250,50,50), (255,255,255)], [(150,250,50,50), (150,150,150)], [(200,250,50,50), (255,255,255)], [(250,250,50,50), (150,150,150)], [(300,250,50,50), (255,255,255)], [(350,250,50,50), (150,150,150)], [(400,250,50,50), (255,255,255)]],
+                                            [[(50,300,50,50), (255,255,255)], [(100,300,50,50), (150,150,150)], [(150,300,50,50), (255,255,255)], [(200,300,50,50), (150,150,150)], [(250,300,50,50), (255,255,255)], [(300,300,50,50), (150,150,150)], [(350,300,50,50), (255,255,255)], [(400,300,50,50), (150,150,150)]],
+                                            [[(50,350,50,50), (150,150,150)], [(100,350,50,50), (255,255,255)], [(150,350,50,50), (150,150,150)], [(200,350,50,50), (255,255,255)], [(250,350,50,50), (150,150,150)], [(300,350,50,50), (255,255,255)], [(350,350,50,50), (150,150,150)], [(400,350,50,50), (255,255,255)]],
+                                            [[(50,400,50,50), (255,255,255)], [(100,400,50,50), (150,150,150)], [(150,400,50,50), (255,255,255)], [(200,400,50,50), (150,150,150)], [(250,400,50,50), (255,255,255)], [(300,400,50,50), (150,150,150)], [(350,400,50,50), (255,255,255)], [(400,400,50,50), (150,150,150)]],
+                            ]
                                             
                     #Selecionar peça
                     else:                
@@ -557,6 +563,7 @@ class Dama:
             if not q.empty():
                 self.UpdateParameter()
 
-            self.loop = self.Winner()
+            self.loop, winner = self.Winner()
             pygame.display.update()
             self.clock.tick(30)
+        return winner
