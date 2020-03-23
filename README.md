@@ -3,7 +3,7 @@
 Como iniciar
 -Ter o python 3, ou superior, instalado (Foi desenvolvido no Python 3.8)
 -Ter instalado o pip (py pip.py)
--Adicionar as dependencias (py -m pip -r requeriments.txt)
+-Adicionar as dependencias (py -m pip -r requeriments.txt / py pip -r requeriments.txt / pip -r requeriments.txt)
 -Inicia o Servidor (py server.py)
 -Inicia os clientes (py client.py)
 
