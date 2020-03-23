@@ -1,13 +1,10 @@
-from queue import Queue
+import socket
+from drawField import Dama
+import pygame
+from pygame.locals import *
+import os
 
-q = Queue()
-
-q.put([1,2,3])
-q.put([4,5,6])
-q.put(0)
-
-print(q.get())
-print(q.get())
-print(q.empty())
-
-print("Tamanho: {}".format(q.qsize()))
+win = pygame.display.set_mode((500,500))
+pygame.display.set_caption("Dama")
+win.blit(pygame.image.load(os.path.join("imagens", "aguardandoAdversario.png")),(0,0))
+pygame.display.update()

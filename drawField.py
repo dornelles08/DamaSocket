@@ -60,7 +60,7 @@ class Listener(Thread):
         
 
 class Dama:
-    def __init__(self, vez):
+    def __init__(self, color):
         self.window = pygame.display.set_mode((500,500))
         pygame.display.set_caption("Dama")
         self.clock = pygame.time.Clock()
@@ -69,6 +69,8 @@ class Dama:
         self.BRANCA = pygame.image.load(os.path.join("imagens", "branca.png"))
         self.DAMAPRETA = pygame.image.load(os.path.join("imagens", "pretaDama.png"))
         self.DAMABRANCA = pygame.image.load(os.path.join("imagens", "brancaDama.png"))
+        self.YOURTURN = pygame.image.load(os.path.join("imagens", "suaVez.png"))
+        self.WAIT = pygame.image.load(os.path.join("imagens", "aguardando.png"))
 
         self.campo = [
             [[(50,50,50,50),  (150,150,150)], [(100,50,50,50),  (255,255,255)], [(150,50,50,50),  (150,150,150)], [(200,50,50,50),  (255,255,255)], [(250,50,50,50),  (150,150,150)], [(300,50,50,50),  (255,255,255)], [(350,50,50,50),  (150,150,150)], [(400,50,50,50),  (255,255,255)]],
@@ -95,40 +97,59 @@ class Dama:
         self.posSelected = None
         self.posibilityMove = []
         self.vez = 1
-        self.peiceColor = vez
+        self.peiceColor = color
+        self.vezText = None
+        if self.peiceColor == 1:
+            self.vezText = self.YOURTURN
+        else:
+            self.vezText = self.WAIT
    
     def UpdateParameter(self):
         self.pretas = q.get()
         self.brancas = q.get()
         self.vez = q.get()
 
-    def Field(self, win, campo):
-        for linha in campo:        
+    def Field(self):
+        for linha in self.campo:        
             for coluna in linha:            
-                    pygame.draw.rect(win, coluna[1], coluna[0])
+                    pygame.draw.rect(self.window, coluna[1], coluna[0])
         
-    def Peices(self, win, pretas, brancas):
-        for p in pretas:
-            win.blit(p[1], (p[0][0], p[0][1]))
-        for b in brancas:
-            win.blit(b[1], (b[0][0], b[0][1]))
+    def Peices(self):
+        for p in self.pretas:
+            self.window.blit(p[1], (p[0][0], p[0][1]))
+        for b in self.brancas:
+            self.window.blit(b[1], (b[0][0], b[0][1]))
 
-    def SelectPeice(self, pos, pretas, brancas):
-        for i in range(len(pretas)):
-            if pygame.Rect(pretas[i][0][0], pretas[i][0][1], pretas[i][0][2], pretas[i][0][3]).collidepoint(pos[0], pos[1]) and self.peiceColor == 0:
+    def SelectPeice(self, pos):
+        for i in range(len(self.pretas)):
+            if pygame.Rect(self.pretas[i][0][0], self.pretas[i][0][1], self.pretas[i][0][2], self.pretas[i][0][3]).collidepoint(pos[0], pos[1]) and self.peiceColor == 0:
                 return i, 0
-        for i in range(len(brancas)):
-            if pygame.Rect(brancas[i][0][0], brancas[i][0][1], brancas[i][0][2], brancas[i][0][3]).collidepoint(pos[0], pos[1]) and self.peiceColor == 1:
+        for i in range(len(self.brancas)):
+            if pygame.Rect(self.brancas[i][0][0], self.brancas[i][0][1], self.brancas[i][0][2], self.brancas[i][0][3]).collidepoint(pos[0], pos[1]) and self.peiceColor == 1:
                 return i, 1
         return None, None
         
-    def SelectPos(self, pos, campo):
-        for i in range(len(campo)):
-            for j in range(len(campo[i])):
-                temp = campo[i][j][0]
+    def SelectPos(self, pos):
+        for i in range(len(self.campo)):
+            for j in range(len(self.campo[i])):
+                temp = self.campo[i][j][0]
                 if pygame.Rect(temp[0], temp[1], temp[2], temp[3]).collidepoint(pos[0], pos[1]):
                     return temp, i, j
 
+    def changeColorSelectedPeice(self, peice, selected):
+        if peice == 0:
+            for i in range(len(self.campo)):
+                for j in range(len(self.campo[i])):
+                    if self.campo[i][j][0] == self.pretas[selected][0]:
+                        self.campo[i][j][1] = (0,255,0)
+                        break
+        else:
+            for i in range(len(self.campo)):
+                for j in range(len(self.campo[i])):
+                    if self.campo[i][j][0] == self.brancas[selected][0]:
+                        self.campo[i][j][1] = (0,255,0)
+                        break
+        
     def Colission(self, posPeice, posOpponent, cor, linha, coluna):
         if cor == 0:
             if posPeice[0] > posOpponent[0]:
@@ -154,7 +175,7 @@ class Dama:
                     return None
 
     def MovePosibility(self, peiceSelected, peices, cor, adversario):
-        _, i, j = self.SelectPos((peices[peiceSelected][0][0], peices[peiceSelected][0][1]), self.campo)
+        _, i, j = self.SelectPos((peices[peiceSelected][0][0], peices[peiceSelected][0][1]))
         posPeice = peices[peiceSelected][0]
         self.posibilityMove = []
         collisonPosition = None
@@ -169,28 +190,19 @@ class Dama:
                         self.posibilityMove = [self.campo[i+1][j+1][0]]
             elif j == 7: 
                 for p in peices:
-                    if p[2]:
-                        if p[0] == [self.campo[i+1][j-1][0]]:
-                            self.posibilityMove = []
-                        else:
-                            self.posibilityMove = [self.campo[i+1][j-1][0]]
+                    if p[0] == [self.campo[i+1][j-1][0]]:
+                        self.posibilityMove = []
                     else:
-                        if p[0] == [self.campo[i+1][j-1][0]]:
-                            self.posibilityMove = []
-                        else:
-                            self.posibilityMove = [self.campo[i+1][j-1][0]]
+                        self.posibilityMove = [self.campo[i+1][j-1][0]]
             else:
                 tem1 = False
                 tem2 = False
                 for p in peices:
-                    if p[2]:
-                        pass
-                    else:
-                        if p[0] == self.campo[i+1][j-1][0]:
-                            tem1 = True
+                    if p[0] == self.campo[i+1][j-1][0]:
+                        tem1 = True
 
-                        if p[0] == self.campo[i+1][j+1][0]:
-                            tem2 = True
+                    if p[0] == self.campo[i+1][j+1][0]:
+                        tem2 = True
                     
                 if not tem1:
                     self.posibilityMove.append(self.campo[i+1][j-1][0])
@@ -248,8 +260,9 @@ class Dama:
                 for i in range(len(self.brancas)):
                     if self.brancas[i][0] == removePosition:
                         self.brancas.pop(i)
+                        print("Comeu")
                         break
-            if posSelected[1] == 450:
+            if posSelected[1] == 400:
                 self.pretas[peiceSelected][1] = self.DAMAPRETA
                 self.pretas[peiceSelected][2] = True
                 
@@ -259,6 +272,7 @@ class Dama:
                 for i in range(len(self.pretas)):
                     if self.pretas[i][0] == removePosition:
                         self.pretas.pop(i)
+                        print("Comeu")
                         break
             if posSelected[1] == 50:
                 self.brancas[peiceSelected][1] = self.DAMABRANCA
@@ -290,22 +304,22 @@ class Dama:
         elif cor == 1:
             if posPeice[0] > posOpponent[0] and posPeice[1] < posOpponent[1]:
                 try:
-                    return self.campo[linha-2][coluna-2][0]
+                    return self.campo[linha+2][coluna-2][0]
                 except:
                     return None
             elif posPeice[0] < posOpponent[0] and posPeice[1] < posOpponent[1]:
                 try:
-                    return self.campo[linha-2][coluna+2][0]
+                    return self.campo[linha+2][coluna+2][0]
                 except:
                     return None
             elif posPeice[0] < posOpponent[0] and posPeice[1] > posOpponent[1]:
                 try:
-                    return self.campo[linha+2][coluna+2][0]
+                    return self.campo[linha-2][coluna+2][0]
                 except:
                     return None
             elif posPeice[0] > posOpponent[0] and posPeice[1] > posOpponent[1]:
                 try:
-                    return sel.campo[linha+2][coluna-2][0]
+                    return self.campo[linha-2][coluna-2][0]
                 except:
                     return None
 
@@ -317,30 +331,27 @@ class Dama:
         removePosition = None
 
         if cor == 0:
+            print(i)
             #preto
             if j == 0:
                 for p in peices:                    
-                    if p[0] == self.campo[i+1][j+1][0]:
-                        self.posibilityMove = []
-                    else:
-                        self.posibilityMove = [self.campo[i+1][j+1][0]]
+                    if p[0] != self.campo[i+1][j+1][0]:
+                        self.posibilityMove.append(self.campo[i+1][j+1][0])
                     
                     if i > 0 and p[0] == self.campo[i-1][j+1][0]:
-                        self.posibilityMove = []
+                        pass
                     else:
-                        self.posibilityMove = [self.campo[i-1][j+1][0]]
+                        self.posibilityMove.append(self.campo[i-1][j+1][0])
                             
             elif j == 7: 
                 for p in peices:
-                    if p[0] == [self.campo[i+1][j-1][0]]:
-                        self.posibilityMove = []
-                    else:
-                        self.posibilityMove = [self.campo[i+1][j-1][0]]
+                    if p[0] != [self.campo[i+1][j-1][0]]:
+                        self.posibilityMove.append(self.campo[i+1][j-1][0])
                     
                     if i < 7 and p[0] == [self.campo[i-1][j-1][0]]:
-                        self.posibilityMove = []
+                        pass
                     else:
-                        self.posibilityMove = [self.campo[i-1][j-1][0]]
+                        self.posibilityMove.append(self.campo[i-1][j-1][0])
                         
             else:
                 tem1 = False
@@ -348,83 +359,86 @@ class Dama:
                 tem3 = False
                 tem4 = False
                 for p in peices:
-                    if p[0] == self.campo[i+1][j-1][0]:
-                        tem1 = True
+                    if i != 7:
+                        if p[0] == self.campo[i+1][j-1][0]:
+                            tem1 = True
 
-                    if p[0] == self.campo[i+1][j+1][0]:
-                        tem2 = True
+                        if p[0] == self.campo[i+1][j+1][0]:
+                            tem2 = True
 
-                    if p[0] == self.campo[i-1][j-1][0]:
-                        tem3 = True
+                    if i!=0:
+                        if p[0] == self.campo[i-1][j-1][0]:
+                            tem3 = True
 
-                    if p[0] == self.campo[i-1][j+1][0]:
-                        tem4 = True
-
-                if not tem1:
-                    self.posibilityMove.append(self.campo[i+1][j-1][0])
-                if not tem2:
-                    self.posibilityMove.append(self.campo[i+1][j+1][0])
-                if not tem3:
-                    self.posibilityMove.append(self.campo[i-1][j-1][0])
-                if not tem4:
-                    self.posibilityMove.append(self.campo[i-1][j+1][0])
+                        if p[0] == self.campo[i-1][j+1][0]:
+                            tem4 = True
+                if i != 7:
+                    if not tem1:
+                        self.posibilityMove.append(self.campo[i+1][j-1][0])
+                    if not tem2:
+                        self.posibilityMove.append(self.campo[i+1][j+1][0])
+                if i!=0:       
+                    if not tem3:
+                        self.posibilityMove.append(self.campo[i-1][j-1][0])
+                    if not tem4:
+                        self.posibilityMove.append(self.campo[i-1][j+1][0])
 
         elif cor == 1:
             #branco
             if j == 0:
                 for p in peices:
-                    if p[0] == [self.campo[i-1][j+1][0]]:
-                        self.posibilityMove = []
-                    else:
-                        self.posibilityMove = [self.campo[i-1][j+1][0]]
+                    if p[0] != [self.campo[i-1][j+1][0]]:                    
+                        self.posibilityMove.append(self.campo[i-1][j+1][0])
 
                     if i > 0 and p[0] == [self.campo[i+1][j+1][0]]:
-                        self.posibilityMove = []
+                        pass
                     else:
-                        self.posibilityMove = [self.campo[i+1][j+1][0]]
+                        self.posibilityMove.append(self.campo[i+1][j+1][0])
             elif j == 7:
                 for p in peices:
-                    if p[0] == [self.campo[i-1][j-1][0]]:
-                        self.posibilityMove = []
-                    else:
-                        self.posibilityMove = [self.campo[i-1][j-1][0]]
+                    if p[0] != [self.campo[i-1][j-1][0]]:
+                        self.posibilityMove.append(self.campo[i-1][j-1][0])
                     
                     if i < 7 and p[0] == [self.campo[i+1][j-1][0]]:
-                        self.posibilityMove = []
+                        pass
                     else:
-                        self.posibilityMove = [self.campo[i+1][j-1][0]]
+                        self.posibilityMove.append(self.campo[i+1][j-1][0])
             else:
                 tem1 = False
                 tem2 = False
                 tem3 = False
                 tem4 = False
                 for p in peices:
-                    if p[0] == self.campo[i-1][j-1][0]:
-                        tem1 = True
+                    if i!=0:
+                        if p[0] == self.campo[i-1][j-1][0]:
+                            tem1 = True
 
-                    if p[0] == self.campo[i-1][j+1][0]:
-                        tem2 = True
+                        if p[0] == self.campo[i-1][j+1][0]:
+                            tem2 = True
 
-                    if p[0] == self.campo[i+1][j-1][0]:
-                        tem3 = True
+                    if i!=7:    
+                        if p[0] == self.campo[i+1][j-1][0]:
+                            tem3 = True
 
-                    if p[0] == self.campo[i+1][j+1][0]:
-                        tem4 = True
-                    
-                if not tem1:
-                    self.posibilityMove.append(self.campo[i-1][j-1][0])
-                if not tem2:
-                    self.posibilityMove.append(self.campo[i-1][j+1][0])
-                if not tem3:
-                    self.posibilityMove.append(self.campo[i+1][j-1][0])
-                if not tem4:
-                    self.posibilityMove.append(self.campo[i+1][j+1][0]) 
+                        if p[0] == self.campo[i+1][j+1][0]:
+                            tem4 = True
+                if i!=0: 
+                    if not tem1:
+                        self.posibilityMove.append(self.campo[i-1][j-1][0])
+                    if not tem2:
+                        self.posibilityMove.append(self.campo[i-1][j+1][0])
+                
+                if i!=7:
+                    if not tem3:
+                        self.posibilityMove.append(self.campo[i+1][j-1][0])
+                    if not tem4:
+                        self.posibilityMove.append(self.campo[i+1][j+1][0]) 
 
         for x in range(len(adversario)):
             if adversario[x][0] in self.posibilityMove:
                 self.posibilityMove.remove(adversario[x][0])
                 removePosition = adversario[x][0]
-                eatPeice = self.Colission(posPeice, adversario[x][0], cor, i, j)
+                eatPeice = self.ColissionDama(posPeice, adversario[x][0], cor, i, j)
                 canEat = True
                 for a in adversario:
                     if eatPeice != None and a[0] == eatPeice:
@@ -446,6 +460,7 @@ class Dama:
                 for i in range(len(self.brancas)):
                     if self.brancas[i][0] == removePosition:
                         self.brancas.pop(i)
+                        print("Dama comeu")
                         break
                 
         elif peices == 1:
@@ -454,6 +469,7 @@ class Dama:
                 for i in range(len(self.pretas)):
                     if self.pretas[i][0] == removePosition:
                         self.pretas.pop(i)
+                        print("Dama comeu")
                         break
 
     def Winner(self):
@@ -464,16 +480,17 @@ class Dama:
             print("Vitória do Preto")
             return False
         return True
-
+    
     def main(self, con):
         pygame.init()   
         l = Listener(con)
-        l.start()
+        l.start()    
 
         while self.loop:
             self.window.fill((192,217,217))
-            self.Field(self.window, self.campo)
-            self.Peices(self.window, self.pretas, self.brancas)
+            self.Field()
+            self.Peices()
+            self.window.blit(self.vezText, (0,455))
 
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -481,8 +498,8 @@ class Dama:
                 if event.type == MOUSEBUTTONDOWN:
                     #Selecionar posição para mover peça                    
                     if self.peiceSelected != None and self.posibilityMove != []:
-                        if self.SelectPos(pygame.mouse.get_pos(), self.campo) != None:
-                            self.posSelected, _, _ = self.SelectPos(pygame.mouse.get_pos(), self.campo)
+                        if self.SelectPos(pygame.mouse.get_pos()) != None:
+                            self.posSelected, _, _ = self.SelectPos(pygame.mouse.get_pos())
                         
                         if self.posibilityMove != None and self.posSelected in self.posibilityMove:
                             self.Move(self.peiceSelected, peices, self.posSelected, collisonPosition, removePosition)
@@ -490,26 +507,42 @@ class Dama:
                             self.posSelected = None
                             if self.vez == 0:
                                 self.vez = 1
+                                if self.peiceColor == 1:
+                                    self.vezText = self.YOURTURN
+                                elif self.peiceColor == 0:
+                                    self.vezText = self.WAIT
                             else:
                                 self.vez = 0
-                            
+                                if self.peiceColor == 1:
+                                    self.vezText = self.WAIT
+                                elif self.peiceColor == 0:
+                                    self.vezText = self.YOURTURN
+                            self.campo = [
+                                            [[(50,50,50,50),  (150,150,150)], [(100,50,50,50),  (255,255,255)], [(150,50,50,50),  (150,150,150)], [(200,50,50,50),  (255,255,255)], [(250,50,50,50),  (150,150,150)], [(300,50,50,50),  (255,255,255)], [(350,50,50,50),  (150,150,150)], [(400,50,50,50),  (255,255,255)]],
+                                            [[(50,100,50,50), (255,255,255)], [(100,100,50,50), (150,150,150)], [(150,100,50,50), (255,255,255)], [(200,100,50,50), (150,150,150)], [(250,100,50,50), (255,255,255)], [(300,100,50,50), (150,150,150)], [(350,100,50,50), (255,255,255)], [(400,100,50,50), (150,150,150)]],
+                                            [[(50,150,50,50), (150,150,150)], [(100,150,50,50), (255,255,255)], [(150,150,50,50), (150,150,150)], [(200,150,50,50), (255,255,255)], [(250,150,50,50), (150,150,150)], [(300,150,50,50), (255,255,255)], [(350,150,50,50), (150,150,150)], [(400,150,50,50), (255,255,255)]],
+                                            [[(50,200,50,50), (255,255,255)], [(100,200,50,50), (150,150,150)], [(150,200,50,50), (255,255,255)], [(200,200,50,50), (150,150,150)], [(250,200,50,50), (255,255,255)], [(300,200,50,50), (150,150,150)], [(350,200,50,50), (255,255,255)], [(400,200,50,50), (150,150,150)]],
+                                            [[(50,250,50,50), (150,150,150)], [(100,250,50,50), (255,255,255)], [(150,250,50,50), (150,150,150)], [(200,250,50,50), (255,255,255)], [(250,250,50,50), (150,150,150)], [(300,250,50,50), (255,255,255)], [(350,250,50,50), (150,150,150)], [(400,250,50,50), (255,255,255)]],
+                                            [[(50,300,50,50), (255,255,255)], [(100,300,50,50), (150,150,150)], [(150,300,50,50), (255,255,255)], [(200,300,50,50), (150,150,150)], [(250,300,50,50), (255,255,255)], [(300,300,50,50), (150,150,150)], [(350,300,50,50), (255,255,255)], [(400,300,50,50), (150,150,150)]],
+                                            [[(50,350,50,50), (150,150,150)], [(100,350,50,50), (255,255,255)], [(150,350,50,50), (150,150,150)], [(200,350,50,50), (255,255,255)], [(250,350,50,50), (150,150,150)], [(300,350,50,50), (255,255,255)], [(350,350,50,50), (150,150,150)], [(400,350,50,50), (255,255,255)]],
+                                            [[(50,400,50,50), (255,255,255)], [(100,400,50,50), (150,150,150)], [(150,400,50,50), (255,255,255)], [(200,400,50,50), (150,150,150)], [(250,400,50,50), (255,255,255)], [(300,400,50,50), (150,150,150)], [(350,400,50,50), (255,255,255)], [(400,400,50,50), (150,150,150)]],
+                                        ]
                             enviar = Enviar(self.pretas, self.brancas, self.vez)
                             con.send(bytes(pickle.dumps(enviar)))                        
-                            print("Enviar")
                         else:
-                            print("Não pode mover para ai")
+                            self.peiceSelected = None
+                            self.posSelected = None
                                             
                     #Selecionar peça
                     else:                
-                        self.peiceSelected, peices = self.SelectPeice(pygame.mouse.get_pos(), self.pretas, self.brancas)
+                        self.peiceSelected, peices = self.SelectPeice(pygame.mouse.get_pos())
                         if self.vez == 0 and peices != 0:
                             self.peiceSelected = None
-                            print("Não é sua vez, vez de {}".format(self.vez))
                         if self.vez == 1 and peices != 1:
                             self.peiceSelected = None
-                            print("Não é sua vez, vez de {}".format(self.vez))
-
+                            
                         if self.peiceSelected != None:
+                            self.changeColorSelectedPeice(peices, self.peiceSelected)
                             if peices == 0:
                                 if self.pretas[self.peiceSelected][2]:
                                     self.posibilityMove, collisonPosition, removePosition = self.MovePosibilityDama(self.peiceSelected, self.pretas, peices, self.brancas)                    
@@ -520,7 +553,6 @@ class Dama:
                                     self.posibilityMove, collisonPosition, removePosition = self.MovePosibilityDama(self.peiceSelected, self.brancas, peices, self.pretas)
                                 else:
                                     self.posibilityMove, collisonPosition, removePosition = self.MovePosibility(self.peiceSelected, self.brancas, peices, self.pretas)
-                            print(self.posibilityMove)        
 
             if not q.empty():
                 self.UpdateParameter()
