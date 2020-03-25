@@ -84,7 +84,7 @@ class Dama:
             [[(50,350,50,50), (150,150,150)], [(100,350,50,50), (255,255,255)], [(150,350,50,50), (150,150,150)], [(200,350,50,50), (255,255,255)], [(250,350,50,50), (150,150,150)], [(300,350,50,50), (255,255,255)], [(350,350,50,50), (150,150,150)], [(400,350,50,50), (255,255,255)]],
             [[(50,400,50,50), (255,255,255)], [(100,400,50,50), (150,150,150)], [(150,400,50,50), (255,255,255)], [(200,400,50,50), (150,150,150)], [(250,400,50,50), (255,255,255)], [(300,400,50,50), (150,150,150)], [(350,400,50,50), (255,255,255)], [(400,400,50,50), (150,150,150)]],
         ]
-        '''self.pretas  = [
+        self.pretas  = [
             [self.campo[0][0][0], self.PRETA, False],  [self.campo[0][2][0], self.PRETA, False], [self.campo[0][4][0], self.PRETA, False], [self.campo[0][6][0], self.PRETA, False],
             [self.campo[1][1][0], self.PRETA, False],  [self.campo[1][3][0], self.PRETA, False], [self.campo[1][5][0], self.PRETA, False], [self.campo[1][7][0], self.PRETA, False],
             [self.campo[2][0][0], self.PRETA, False],  [self.campo[2][2][0], self.PRETA, False], [self.campo[2][4][0], self.PRETA, False], [self.campo[2][6][0], self.PRETA, False]
@@ -93,13 +93,8 @@ class Dama:
             [self.campo[7][1][0], self.BRANCA, False], [self.campo[7][3][0], self.BRANCA, False], [self.campo[7][5][0], self.BRANCA, False], [self.campo[7][7][0], self.BRANCA, False],
             [self.campo[6][0][0], self.BRANCA, False], [self.campo[6][2][0], self.BRANCA, False], [self.campo[6][4][0], self.BRANCA, False], [self.campo[6][6][0], self.BRANCA, False],
             [self.campo[5][1][0], self.BRANCA, False], [self.campo[5][3][0], self.BRANCA, False], [self.campo[5][5][0], self.BRANCA, False], [self.campo[5][7][0], self.BRANCA, False]
-        ]'''
-        self.pretas  = [
-            [self.campo[0][0][0], self.PRETA, False]
         ]
-        self.brancas = [
-            [self.campo[1][1][0], self.BRANCA, False]
-        ]
+
 
         self.peiceSelected = None
         self.posSelected = None
